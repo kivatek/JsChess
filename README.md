@@ -11,9 +11,10 @@
 バージョンは0.3系です。
 
 同梱の grunt.js では以下のコマンドを用意しています。
-    grunt debug
-    grunt release
-    grunt clean
+
+* grunt debug
+* grunt release
+* grunt clean
 
 Windows環境ではコマンドラインで grunt.cmd と指定してください。
 gruntとだけタイプして実行しようとしてもエラーとなります。
@@ -23,13 +24,15 @@ gruntとだけタイプして実行しようとしてもエラーとなります
 
 なおgruntを使用するには node.js を先に導入する必要があります。
 以下のサイトを参照してください。
-    http://nodejs.org/
-    http://gruntjs.com/
+
+* http://nodejs.org/
+* http://gruntjs.com/
 
 gruntを実行できる状態になりましたら、以下のコマンドを実行してローカルディレクトリにモジュールを追加します。
-    npm install grunt-exec
-    npm install grunt-contrib-copy@0.3.1
-    npm install grunt-contrib-clean@0.3.0
-    npm install grunt-zip
+
+* npm install grunt-exec
+* npm install grunt-contrib-copy@0.3.1
+* npm install grunt-contrib-clean@0.3.0
+* npm install grunt-zip
 
 
