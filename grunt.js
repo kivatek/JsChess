@@ -39,21 +39,11 @@ module.exports = function(grunt) {
 			all: ['grunt.js', 'dev/**/*.js']
 		},
 		copy: {
-			toDebug: {
-				files: {
-					"debug/": "dev/src/*",	// includes files in dir
-					"debug/images/": "dev/images/*.png",
-					"debug/enchant.js": "engine/enchant.js",
-					"debug/nineleap.enchant.js": "engine/plugins/nineleap.enchant.js",
-					"debug/end.png": "dev/images/end.png",
-					"debug/start.png": "dev/images/start.png"
-				}
-			},
 			toRelease: {
 				files: {
-					"images/": "dev/images/*.png",
-					"end.png": "dev/images/end.png",
-					"start.png": "dev/images/start.png"
+					"images/": "dev/src/images/*.png",
+					"end.png": "dev/src/images/end.png",
+					"start.png": "dev/src/images/start.png"
 				}
 			}
 		},
@@ -96,11 +86,6 @@ module.exports = function(grunt) {
 			}
 		},
 		clean: {
-			debug: [
-					'debug/*.js',
-					'debug/*.png',
-					'debug/images/*.*'
-				],
 			release: [
 					'app.js',
 					'app.min.js',
@@ -127,8 +112,7 @@ module.exports = function(grunt) {
 		}
 	});
 
-	grunt.registerTask('default', 'clean:debug copy:toDebug');
-	grunt.registerTask('debug', 'default');
 	grunt.registerTask('release', 'clean:release concat min copy:toRelease zip');
+	grunt.registerTask('default', 'release');
 }
 ;

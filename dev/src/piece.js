@@ -36,7 +36,7 @@ var Piece = Class.create(Sprite, {
 		},
 		set: function(col) {
 			this._col = col;
-			this.x = BOARD_X + (SQUARE_WIDTH * col);
+			this.x = squareX(col);
 		}
 	},
 	row: {
@@ -45,7 +45,7 @@ var Piece = Class.create(Sprite, {
 		},
 		set: function(row) {
 			this._row = row;
-			this.y = BOARD_Y + (SQUARE_HEIGHT * row);
+			this.y = squareY(row);
 		}
 	}
 });

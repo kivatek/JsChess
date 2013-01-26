@@ -49,21 +49,21 @@ function getSquareTag(col, row) {
 }
 
 // Square座標から表示x座標を算出する。
-function squareX(col, row) {
-	return BOARD_X + (col * SQUARE_WIDTH);
+function squareX(col) {
+	return BOARD_X + (SQUARE_WIDTH * col);
 }
 
 // Square座標から表示y座標を算出する。
-function squareY(col, row) {
-	return BOARD_Y + (row * SQUARE_HEIGHT);
+function squareY(row) {
+	return BOARD_Y + (SQUARE_HEIGHT * ((ROW_FIELD - 1) - row));
 }
 
 function indexToX(index) {
-	return squareX(FLOOR(index % COL_FIELD), FLOOR(index / COL_FIELD));
+	return squareX(FLOOR(index % COL_FIELD));
 }
 
 function indexToY(index) {
-	return squareY(FLOOR(index % COL_FIELD), FLOOR(index / COL_FIELD));
+	return squareY(FLOOR(index / COL_FIELD));
 }
 
 function boardXToCol(x)
@@ -73,7 +73,7 @@ function boardXToCol(x)
 
 function boardYToRow(y)
 {
-	return FLOOR(y / SQUARE_HEIGHT);
+	return (ROW_FIELD - 1) - FLOOR(y / SQUARE_HEIGHT);
 }
 
 function initBoard() {
