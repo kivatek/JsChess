@@ -1,5 +1,5 @@
 /**
- * enchant.js v0.6.2
+ * enchant.js v0.6.3
  * http://enchantjs.com
  * 
  * Copyright Ubiquitous Entertainment Inc.
@@ -280,7 +280,7 @@ enchant.Class.create = function(superclass, definition) {
     }
 
     var tree = this.getInheritanceTree(superclass);
-    for (var i = tree.length - 1; i >= 0; i--) {
+    for (var i = 0, l = tree.length; i < l; i++) {
         if (typeof tree[i]._inherited === 'function') {
             tree[i]._inherited(Constructor);
             break;
@@ -1280,9 +1280,9 @@ enchant.EventTarget = enchant.Class.create({
             this.addEventListener('load', onloadTimeSetter);
 
             if (!this._activated && this._assets.length) {
-                this._activated = true;
-                if (enchant.Sound.enabledInMobileSafari && !core._touched &&
-                    enchant.ENV.VENDOR_PREFIX === 'webkit' && enchant.ENV.TOUCH_ENABLED) {
+                if (enchant.ENV.SOUND_ENABLED_ON_MOBILE_SAFARI && !core._touched &&
+                    (navigator.userAgent.indexOf('iPhone OS') !== -1 ||
+                    navigator.userAgent.indexOf('iPad') !== -1)) {
                     var scene = new enchant.Scene();
                     scene.backgroundColor = '#000';
                     var size = Math.round(core.width / 10);
@@ -1302,6 +1302,8 @@ enchant.EventTarget = enchant.Class.create({
                     core.pushScene(scene);
                     return;
                 }
+
+                this._activated = true;
 
                 var o = {};
                 var assets = this._assets.filter(function(asset) {
@@ -2351,6 +2353,17 @@ enchant.Label = enchant.Class.create(enchant.Entity, {
         this.font = '14px serif';
         this.textAlign = 'left';
     },
+    width: {
+        get: function() {
+            return this._width;
+        },
+        set: function(width) {
+            this._width = width;
+            this._dirty = true;
+            // issue #164
+            this.updateBoundArea();
+        }
+    },
     /**
      * Text to be displayed.
      * @type {String}
@@ -2360,6 +2373,7 @@ enchant.Label = enchant.Class.create(enchant.Entity, {
             return this._text;
         },
         set: function(text) {
+            text = '' + text;
             if(this._text === text) {
                 return;
             }
@@ -3234,10 +3248,18 @@ enchant.DomManager = enchant.Class.create({
         var element = childManager.getDomElement();
         if (element instanceof Array) {
             element.forEach(function(child) {
-                this.element.insertBefore(child, nextElement);
+                if (nextElement) {
+                    this.element.insertBefore(child, nextElement);
+                } else {
+                    this.element.appendChild(child);
+                }
             }, this);
         } else {
-            this.element.insertBefore(element, nextElement);
+            if (nextElement) {
+                this.element.insertBefore(element, nextElement);
+            } else {
+                this.element.appendChild(element);
+            }
         }
         this.setLayer(this.layer);
     },
@@ -3284,14 +3306,16 @@ enchant.DomManager = enchant.Class.create({
             node._offsetX += node.parentNode._offsetX;
             node._offsetY += node.parentNode._offsetY;
         }
-        this.style[enchant.ENV.VENDOR_PREFIX + 'Transform'] = 'matrix(' +
-        dest[0].toFixed(10) + ',' +
-        dest[1].toFixed(10) + ',' +
-        dest[2].toFixed(10) + ',' +
-        dest[3].toFixed(10) + ',' +
-        dest[4].toFixed(10) + ',' +
-        dest[5].toFixed(10) +
-        ')';
+        if (node._dirty) {
+            this.style[enchant.ENV.VENDOR_PREFIX + 'Transform'] = 'matrix(' +
+                dest[0].toFixed(10) + ',' +
+                dest[1].toFixed(10) + ',' +
+                dest[2].toFixed(10) + ',' +
+                dest[3].toFixed(10) + ',' +
+                dest[4].toFixed(10) + ',' +
+                dest[5].toFixed(10) +
+            ')';
+        }
         this.domRender();
     },
     domRender: function() {
@@ -3312,10 +3336,12 @@ enchant.DomManager = enchant.Class.create({
         if (typeof node.domRender === 'function') {
             node.domRender(this.element);
         }
+        var value;
         for (var prop in node._style) {
-            if(node.__styleStatus[prop] !== node._style[prop]) {
-                this.style.setProperty(prop, node._style[prop]);
-                node.__styleStatus[prop] = node._style[prop];
+            value = node._style[prop];
+            if(node.__styleStatus[prop] !== value && value != null) {
+                this.style.setProperty(prop, '' + value);
+                node.__styleStatus[prop] = value;
             }
         }
     },
@@ -3732,6 +3758,7 @@ enchant.CanvasLayer = enchant.Class.create(enchant.Group, {
                 ctx.strokeRect(0, 0, width, height);
             }
             if (node._clipping) {
+                ctx.beginPath();
                 ctx.rect(0, 0, width, height);
                 ctx.clip();
             }
@@ -3980,7 +4007,11 @@ enchant.Scene = enchant.Class.create(enchant.Group, {
         var element = layer._element;
         if (typeof i === 'number') {
             var nextSibling = this._element.childNodes[i];
-            this._element.insertBefore(element, nextSibling);
+            if (nextSibling) {
+                this._element.insertBefore(element, nextSibling);
+            } else {
+                this._element.appendChild(element);
+            }
             this._layerPriority.splice(i, 0, type);
         } else {
             this._element.appendChild(element);
@@ -4063,11 +4094,11 @@ enchant.CanvasScene = enchant.Class.create(enchant.Scene, {
     },
     _onenter: function() {
         this._layers.Canvas._startRendering();
-        enchant.Game.instance.addEventListener('exitframe', this._dispatchExitframe);
+        enchant.Core.instance.addEventListener('exitframe', this._dispatchExitframe);
     },
     _onexit: function() {
         this._layers.Canvas._stopRendering();
-        enchant.Game.instance.removeEventListener('exitframe', this._dispatchExitframe);
+        enchant.Core.instance.removeEventListener('exitframe', this._dispatchExitframe);
     }
 });
 
@@ -4095,11 +4126,11 @@ enchant.DOMScene = enchant.Class.create(enchant.Scene, {
     },
     _onenter: function() {
         this._layers.Dom._startRendering();
-        enchant.Game.instance.addEventListener('exitframe', this._dispatchExitframe);
+        enchant.Core.instance.addEventListener('exitframe', this._dispatchExitframe);
     },
     _onexit: function() {
         this._layers.Dom._stopRendering();
-        enchant.Game.instance.removeEventListener('exitframe', this._dispatchExitframe);
+        enchant.Core.instance.removeEventListener('exitframe', this._dispatchExitframe);
     }
 });
 
@@ -4419,6 +4450,9 @@ enchant.DOMSound.load = function(src, type, callback) {
 
     var sound = Object.create(enchant.DOMSound.prototype);
     enchant.EventTarget.call(sound);
+    sound.addEventListener('load', function() {
+        callback.call(enchant.Core.instance);
+    });
     var audio = new Audio();
     if (!enchant.ENV.SOUND_ENABLED_ON_MOBILE_SAFARI &&
         enchant.ENV.VENDOR_PREFIX === 'webkit' && enchant.ENV.TOUCH_ENABLED) {
@@ -4427,16 +4461,16 @@ enchant.DOMSound.load = function(src, type, callback) {
         }, 0);
     } else {
         if (!enchant.ENV.USE_FLASH_SOUND && audio.canPlayType(type)) {
+            audio.addEventListener('canplaythrough', function() {
+                sound.duration = audio.duration;
+                sound.dispatchEvent(new enchant.Event('load'));
+            }, false);
             audio.src = src;
             audio.load();
             audio.autoplay = false;
             audio.onerror = function() {
                 throw new Error('Cannot load an asset: ' + audio.src);
             };
-            audio.addEventListener('canplaythrough', function() {
-                sound.duration = audio.duration;
-                sound.dispatchEvent(new enchant.Event('load'));
-            }, false);
             sound._element = audio;
         } else if (type === 'audio/mpeg') {
             var embed = document.createElement('embed');
@@ -4476,9 +4510,6 @@ enchant.DOMSound.load = function(src, type, callback) {
                 sound.dispatchEvent(new enchant.Event('load'));
             }, 0);
         }
-        sound.addEventListener('load', function() {
-            callback.call(enchant.Core.instance);
-        });
     }
     return sound;
 };
